@@ -1,0 +1,29 @@
+{
+  "name": "blg-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@primeuix/themes": "^1.0.0",
+    "@tailwindcss/vite": "^4.0.17",
+    "bpmn-js": "^18.4.0",
+    "diagram-js": "^15.2.4",
+    "lodash": "^4.17.21",
+    "lucide-vue-next": "^0.484.0",
+    "md-editor-v3": "^5.6.0",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.3",
+    "tailwindcss": "^4.0.17",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.2.1",
+    "vite-plugin-vue-devtools": "^7.7.2"
+  }
+}

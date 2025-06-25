@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+body, html, #app {
+    height: 100%;
+    width: 100%;
+}
+
+.djs-palette {
+    top: 90px !important;
+}
+
+.p-fileupload-basic {
+    justify-content: start !important;
+}
