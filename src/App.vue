@@ -13,6 +13,7 @@ let modeler = null;
 
 const shouldOnboard = ref(false);
 
+const submission_name = ref(null);
 const reference_xml = ref(null);
 const submission_xml = ref(null);
 
@@ -86,12 +87,13 @@ async function toggleReference() {
 }
 
 
-async function gradeSubmission(model_xml) {
+async function gradeSubmission(filename, model_xml) {
   loading.value = true;
 
+  submission_name.value = filename;
   submission_xml.value = model_xml;
 
-  await fetch("/algorithms/analyze", {method: "POST", body: model_xml, headers: {"Content-Type": "application/xml"}})
+  await fetch(`/algorithms/analyze?filename=${filename}`, {method: "POST", headers: {"Content-Type": "application/xml"}})
       .then(async res => {
         if (!res.ok) {
           if (res.status === 404) {
@@ -101,32 +103,25 @@ async function gradeSubmission(model_xml) {
             toast.add({severity: 'error', summary: 'Could not grade submission', detail: await res.text()});
           }
         } else {
-          rubric.value = await res.json();
+          const resData = await res.json();
+          rubric.value.criteria = resData.criteria;
         }
       })
 
   loading.value = false;
 }
 
-function exportCsv(filename) {
-  let data = []
-  let headers = Object.keys(rubric.value.criteria[0]).join(",") + ",score\n"
-  rubric.value.criteria.forEach((item) => {
-    item.score = item.state ? item.points : 0;
-    data.push(Object.values(item).map((item) => {
-      return '"' + item + '"'
-    }).join(","))
-  })
+async function saveSubmission() {
+  if (!submission_name.value || submission_name.value === "Reference") {
+    return;
+  }
 
-  data = headers + data.join("\n")
-
-  const blob = new Blob([data], {type: 'text/csv'})
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = filename.replace(".bpmn", ".csv")
-  link.click();
-  URL.revokeObjectURL(link.href)
-  link.remove()
+  await fetch(`/submissions/${submission_name.value}`, {method: "PATCH", body: JSON.stringify(rubric.value.criteria), headers: {"Content-Type": "application/json"}})
+      .then(async res => {
+        if (!res.ok) {
+          toast.add({severity: 'error', summary: 'Could not save submission', detail: await res.text()});
+        }
+      });
 }
 
 </script>
@@ -146,11 +141,11 @@ function exportCsv(filename) {
   <template v-else>
     <div class="flex flex-row h-full justify-between">
       <div class="flex flex-col w-full h-full relative">
-        <Header v-if="isModelerReady" :modeler="modeler" @export="exportCsv" @regrade="gradeSubmission"/>
+        <Header v-if="isModelerReady" :modeler="modeler" @regrade="gradeSubmission"/>
         <div class="flex-1 h-full w-full relative" ref="bpmn-container"/>
         <BpmnZoomControls v-if="isModelerReady" :modeler="modeler"/>
       </div>
-      <Rubric v-if="isModelerReady" :modeler="modeler" :criteria="rubric.criteria" @toggleReference="toggleReference" @updateRubric="updateRubric"
+      <Rubric v-if="isModelerReady" :modeler="modeler" :criteria="rubric.criteria" @toggleReference="toggleReference" @updateRubric="updateRubric" @saveSubmission="saveSubmission"
               :description="rubric.assignment.description"/>
     </div>
   </template>

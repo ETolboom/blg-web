@@ -8,7 +8,7 @@ import {MdEditor, MdPreview} from "md-editor-v3";
 import _ from "lodash";
 
 const props = defineProps(["modeler", "criteria", "description"]);
-const emits = defineEmits(["toggleReference", "updateRubric"]);
+const emit = defineEmits(["toggleReference", "updateRubric", "saveSubmission"]);
 
 const sidebarVisible = ref(true);
 
@@ -81,7 +81,7 @@ async function saveRubric() {
       return await res.json();
     }
   }).then((data) => {
-    emits("updateRubric", data)
+    emit("updateRubric", data)
     toast.add({severity: 'success', summary: 'Rubric', detail: "Rubric criterion added successfully.", life: "5000"});
   }).catch((e) => {
     toast.add({severity: 'error', summary: 'Rubric', detail: e["detail"], life: "10000"});
@@ -202,12 +202,36 @@ watch(selectedAlgorithm, (newAlgorithm) => {
   });
 });
 
+function updatePoints(index, score) {
+  const n = Number(score);
+  if (Number.isNaN(n) || n <= 0) {
+    props.criteria[index].custom_score = null;
+    props.criteria[index].fulfilled = false;
+  } else if (n > 1) {
+    toast.add({severity: 'error', summary: 'Invalid score', detail: 'Score must be a value between 0 and 1'});
+    return;
+  } else {
+    props.criteria[index].custom_score = n;
+    props.criteria[index].fulfilled = true;
+  }
+  emit('saveSubmission', props.criteria);
+  calculateScore();
+}
+
+
+function resetCustomScore(index) {
+  props.criteria[index].custom_score = null;
+  props.criteria[index].fulfilled = false;
+  emit('saveSubmission', props.criteria);
+  calculateScore();
+}
+
 watch(currentMode, async (newMode) => {
   if (newMode === "Assignment") {
     await nextTick();
     await clearHighlight(currentHighlightIndex.value);
   }
-  emits("toggleReference");
+  emit("toggleReference");
 })
 
 onMounted(() => {
@@ -283,10 +307,13 @@ onMounted(() => {
                 :class='currentHighlightIndex === index ? ["border-2 border-blue-500" ] : ["border-gray-200"]'
                 @click="toggleHighlight(index, item['problematic_elements'])"
                 @toggle="toggleState(index)"
+                @reset="resetCustomScore(index)"
+                @updatePoints="(points) => updatePoints(index, points)"
                 :title="item.name"
                 :description="item.description"
                 :state="item.fulfilled"
-                :points="item['default_points']"
+                :custom_score_set="item['custom_score'] !== null"
+                :points="item['custom_score'] ?? item['default_points']"
             />
           </template>
           <Button @click="openAddDialog" label="Add criteria" icon="pi pi-plus"/>

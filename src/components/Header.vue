@@ -35,7 +35,7 @@ watch(selectedSubmission, async () => {
   const modelXml = await loadSubmission(selectedSubmission.value.filename);
   props.modeler.get('zoomScroll').reset();
   props.modeler.get('canvas').zoom("fit-viewport");
-  emit('regrade', modelXml);
+  emit('regrade', selectedSubmission.value.filename, modelXml);
 })
 
 function previousSubmission() {
@@ -57,14 +57,6 @@ function findSubmissionIndex() {
   return submissions.value.findIndex((item) => item.filename === currentSubmission);
 }
 
-function exportSubmission() {
-  if (selectedSubmission.value) {
-    emit('export', selectedSubmission.value.filename)
-    return
-  }
-  toast.add({ severity: 'error', summary: 'Export failed', detail: 'Cannot export if no submission is selected!' });
-}
-
 </script>
 
 <template>
@@ -80,23 +72,15 @@ function exportSubmission() {
       <PlusIcon/>
     </Button>
     <span class="flex-1"></span>
-    <Button @click="exportSubmission" severity="secondary" class="mx-2">
-      <FileDown/>
-    </Button>
     <Button severity="secondary" @click="visible = !visible">
       <EllipsisVertical/>
     </Button>
   </header>
   <Dialog v-model:visible="visible" modal header="Options" :style="{ width: '25rem' }">
-    <div class="border-1 border-gray-700 p-4 rounded-lg mb-4">
-      <span>Grading settings</span>
-      <p class="text-md text-gray-500 mt-2">Reference grading file</p>
-      <p class="text-sm text-gray-600">"BPMN Midterm 2025.bpmn"</p>
-    </div>
     <div class="border-1 border-gray-700 p-4 rounded-lg">
       <span>Manage graded submissions</span>
-      <Button severity="secondary" class="w-full mt-4" label="Export current submission to CSV" />
-      <Button severity="secondary" class="w-full mt-2" label="Export all submissions to CSV" />
+      <Button icon="pi pi-file-excel" severity="secondary" class="w-full mt-4" as="a" target="_blank" rel="noopener" label="Export current submission" :href="`./submissions/export?filename=${selectedSubmission.filename}`"/>
+      <Button icon="pi pi-folder" severity="secondary" class="w-full mt-4" as="a" target="_blank" rel="noopener" label="Export all submissions" href="./submissions/export/all"/>
     </div>
   </Dialog>
 </template>
